@@ -1,7 +1,9 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
@@ -23,12 +25,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.HashAlgorithm;
-import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.SignatureScheme;
-import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.*;
 import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCertificateRole;
@@ -137,6 +134,10 @@ public class JcaTlsCertificate
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
     {
+        if (InjectedSigVerifiers.isSigSchemeSupported(signatureAlgorithm)) {
+            // #pqc-tls #injection
+            return InjectedSigVerifiers.makeVerifier(crypto, getPublicKey(), signatureAlgorithm);
+        }
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.ed25519:
@@ -270,6 +271,22 @@ public class JcaTlsCertificate
 //        case SignatureScheme.sm2sig_sm3:
 
         default:
+            // #pqc-tls #injection
+            if (InjectedSigVerifiers.isSigSchemeSupported(signatureScheme)) {
+                //TODO: TlsVerifier v = InjectedSigVerifiers.makeVerifier(crypto, pubKeyRSA, signatureScheme);
+                return new Tls13Verifier() {
+                    @Override
+                    public OutputStream getOutputStream() throws IOException {
+                        return new ByteArrayOutputStream();
+                    }
+
+                    @Override
+                    public boolean verifySignature(byte[] signature) throws IOException {
+                        return true; //TODO: by SK
+                    }
+                };
+            }
+
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
     }

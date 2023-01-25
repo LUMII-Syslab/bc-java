@@ -44,6 +44,7 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.TlsVerifier;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Shorts;
@@ -119,6 +120,11 @@ public class TlsUtils
         addCertSigAlgOID(h, RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_512,
             SignatureAndHashAlgorithm.gostr34102012_512);
 
+        // adding injected algorithms #pqc-tls #injection
+        for (InjectedSigAlgorithms.SigAlgorithmInfo alg: InjectedSigAlgorithms.getInjectedSigAndHashAlgorithmsInfos()) {
+            addCertSigAlgOID(h, alg.oid(), alg.signatureAndHashAlgorithm());
+        }
+
         // TODO[RFC 8998]
 //        addCertSigAlgOID(h, GMObjectIdentifiers.sm2sign_with_sm3, HashAlgorithm.sm3, SignatureAlgorithm.sm2);
 
@@ -151,6 +157,12 @@ public class TlsUtils
         result.addElement(SignatureAndHashAlgorithm.getInstance(HashAlgorithm.sha1, SignatureAlgorithm.ecdsa));
         result.addElement(SignatureAndHashAlgorithm.getInstance(HashAlgorithm.sha1, SignatureAlgorithm.rsa));
         result.addElement(SignatureAndHashAlgorithm.getInstance(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
+
+        // adding injected signature+hash algorithms #pqc-tls #injection
+        for (SignatureAndHashAlgorithm alg: InjectedSigAlgorithms.getInjectedSigAndHashAlgorithms()) {
+            result.addElement(alg);
+        }
+
         return result;
     }
 
@@ -1232,6 +1244,9 @@ public class TlsUtils
         {
             addIfSupported(result, crypto, (SignatureAndHashAlgorithm)candidates.elementAt(i));
         }
+
+        // adding injected sig algorithms (to TLS client hello) #pqc-tls #injection
+        result.addAll(0, InjectedSigAlgorithms.getInjectedSigAndHashAlgorithms());
         return result;
     }
 
@@ -5343,6 +5358,11 @@ public class TlsUtils
                 {
                     agreement = crypto.createDHDomain(new TlsDHConfig(supportedGroup, true)).createDH();
                 }
+            }
+            else {
+                // #pqc-tls #injection
+                assert (crypto instanceof JcaTlsCrypto);
+                agreement = InjectedKEMs.getTlsAgreement((JcaTlsCrypto)crypto, supportedGroup);
             }
 
             if (null != agreement)

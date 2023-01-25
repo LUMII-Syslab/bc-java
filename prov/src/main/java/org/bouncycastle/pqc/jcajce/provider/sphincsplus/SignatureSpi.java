@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.InjectablePQC;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusSigner;
 
 public class SignatureSpi
@@ -108,7 +109,8 @@ public class SignatureSpi
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
 
-        return signer.verifySignature(hash, sigBytes);
+        boolean result = signer.verifySignature(hash, sigBytes);
+        return result;
     }
 
     protected void engineSetParameter(AlgorithmParameterSpec params)
@@ -138,7 +140,7 @@ public class SignatureSpi
     {
         public Direct()
         {
-            super(new NullDigest(), new SPHINCSPlusSigner());
+            super(new NullDigest(), new InjectablePQC.InjectableSphincsPlusTlsSigner());// new SPHINCSPlusSigner());
         }
     }
 }

@@ -199,6 +199,8 @@ public class SignatureScheme
 
     public static short getHashAlgorithm(int signatureScheme)
     {
+        if (InjectedSigAlgorithms.isSigSchemeSupported(signatureScheme))
+            return (short)InjectedSigAlgorithms.getCryptoHashAlgorithmIndex(signatureScheme); // #pqc-tls #injection
         return (short)((signatureScheme >>> 8) & 0xFF);
     }
 

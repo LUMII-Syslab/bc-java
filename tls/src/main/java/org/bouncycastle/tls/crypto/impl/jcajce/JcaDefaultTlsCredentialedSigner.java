@@ -6,10 +6,7 @@ import java.security.PublicKey;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 
-import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.DefaultTlsCredentialedSigner;
-import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.SignatureScheme;
+import org.bouncycastle.tls.*;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
 
@@ -87,6 +84,9 @@ public class JcaDefaultTlsCredentialedSigner
         else if ("Ed448".equalsIgnoreCase(algorithm))
         {
             signer = new JcaTlsEd448Signer(crypto, privateKey);
+        }
+        else if (InjectedSigners.isAlgorithmSupported(algorithm)) { // #pqc-tls #injection
+            signer = InjectedSigners.makeSigner(crypto, privateKey);
         }
         else
         {

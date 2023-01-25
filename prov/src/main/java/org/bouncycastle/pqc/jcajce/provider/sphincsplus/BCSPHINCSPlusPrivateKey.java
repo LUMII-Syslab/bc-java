@@ -109,7 +109,8 @@ public class BCSPHINCSPlusPrivateKey
         return "PKCS#8";
     }
 
-    CipherParameters getKeyParams()
+    public CipherParameters getKeyParams()  // changed visibility to public #pqc-tls #injection
+    // return type: SPHINCSPlusPrivateKeyParameters or CipherParameters?
     {
         return params;
     }

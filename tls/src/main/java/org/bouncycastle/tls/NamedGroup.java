@@ -119,6 +119,8 @@ public class NamedGroup
     {
         if (TlsUtils.isTLSv13(version))
         {
+            if (InjectedKEMs.isKEMSupported(namedGroup))
+                return true; // #pqc-tls #injection
             if ((namedGroup >= sect163k1 && namedGroup <= secp256k1)
                 || (namedGroup >= brainpoolP256r1 && namedGroup <= brainpoolP512r1)
                 || (namedGroup >= GC256A && namedGroup <= GC512C)
@@ -342,6 +344,13 @@ public class NamedGroup
         if (null != finiteFieldName)
         {
             return finiteFieldName;
+        }
+
+        // #pqc-tls #injection
+        String injectedKEMName = InjectedKEMs.getInjectedKEMStandardName(namedGroup);
+        if (null != injectedKEMName)
+        {
+            return injectedKEMName;
         }
 
         return null;

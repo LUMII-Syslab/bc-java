@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
+import org.bouncycastle.tls.InjectedKEMs;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
@@ -295,7 +296,15 @@ class NamedGroupInfo
         String[] names = PropertyUtils.getStringArraySystemProperty(PROPERTY_NAMED_GROUPS);
         if (null == names)
         {
-            return CANDIDATES_DEFAULT;
+            // return a concatenation of CANDIDATES_DEFAULT and injected KEMs code points #pqc-tls #injection
+            int[] injected = InjectedKEMs.getInjectedKEMsCodePoints();
+            int[] retVal = new int[CANDIDATES_DEFAULT.length+injected.length];
+
+            for (int i=0; i<CANDIDATES_DEFAULT.length; i++)
+                retVal[i] = CANDIDATES_DEFAULT[i];
+            for (int i=0; i<injected.length; i++)
+                retVal[CANDIDATES_DEFAULT.length + i] = injected[i];
+            return retVal;
         }
 
         int[] result = new int[names.length];

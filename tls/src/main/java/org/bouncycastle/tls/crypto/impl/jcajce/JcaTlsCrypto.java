@@ -18,20 +18,7 @@ import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
-import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.CertificateType;
-import org.bouncycastle.tls.DigitallySigned;
-import org.bouncycastle.tls.EncryptionAlgorithm;
-import org.bouncycastle.tls.HashAlgorithm;
-import org.bouncycastle.tls.MACAlgorithm;
-import org.bouncycastle.tls.NamedGroup;
-import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.SignatureScheme;
-import org.bouncycastle.tls.TlsDHUtils;
-import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.*;
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.CryptoSignatureAlgorithm;
 import org.bouncycastle.tls.crypto.SRP6Group;
@@ -411,6 +398,12 @@ public class JcaTlsCrypto
 
     public AlgorithmParameters getNamedGroupAlgorithmParameters(int namedGroup) throws GeneralSecurityException
     {
+        // #pqc-tls #injection
+        // for injected KEMs (~NamedGroups), return null
+        if (InjectedKEMs.isKEMSupported(namedGroup))
+            return null; // KEM is supported, no specific parameters (e.g., there are no disabled algorithms)
+
+
         if (NamedGroup.refersToAnXDHCurve(namedGroup))
         {
             switch (namedGroup)
@@ -624,6 +617,10 @@ public class JcaTlsCrypto
 
     public boolean hasNamedGroup(int namedGroup)
     {
+        // #pqc-tls #injection
+        if (InjectedKEMs.isKEMSupported(namedGroup)) {
+            return true;
+        }
         final Integer key = Integers.valueOf(namedGroup);
         synchronized (supportedNamedGroups)
         {
@@ -725,6 +722,9 @@ public class JcaTlsCrypto
 
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
     {
+        if (InjectedSigAlgorithms.isSigAndHashAlgorithmSupported(sigAndHashAlgorithm))
+            return true; // #pqc-tls #injection
+
         short signature = sigAndHashAlgorithm.getSignature();
 
         switch (sigAndHashAlgorithm.getHash())
@@ -741,6 +741,9 @@ public class JcaTlsCrypto
 
     public boolean hasSignatureScheme(int signatureScheme)
     {
+        if (InjectedSigAlgorithms.isSigSchemeSupported(signatureScheme))
+            return true; // #pqc-tls #injection
+
         switch (signatureScheme)
         {
         case SignatureScheme.sm2sig_sm3:
@@ -1099,7 +1102,10 @@ public class JcaTlsCrypto
     {
         try
         {
-            if (NamedGroup.refersToAnXDHCurve(namedGroup))
+            if (InjectedKEMs.isKEMSupported(namedGroup)) {
+                return true; // #pqc-tls #injection
+            }
+            else  if (NamedGroup.refersToAnXDHCurve(namedGroup))
             {
                 /*
                  * NOTE: We don't check for AlgorithmParameters support because even the SunEC

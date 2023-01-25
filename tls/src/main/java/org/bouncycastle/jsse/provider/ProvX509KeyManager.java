@@ -41,10 +41,7 @@ import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
 import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
-import org.bouncycastle.tls.KeyExchangeAlgorithm;
-import org.bouncycastle.tls.NamedGroup;
-import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.*;
 
 class ProvX509KeyManager
     extends BCX509ExtendedKeyManager
@@ -173,6 +170,10 @@ class ProvX509KeyManager
         addFilter(filters, DSAPublicKey.class, "DSA");
         addFilter(filters, ECPublicKey.class, "EC");
 
+        // adding filters for injected signers (e.g., PQC signers) #pqc-tls #injection
+        for (String name: InjectedSigners.getInjectedSignerNames())
+            addFilter(filters, name);
+
         return Collections.unmodifiableMap(filters);
     }
 
@@ -200,6 +201,10 @@ class ProvX509KeyManager
         addFilterLegacyServer(filters, "RSA", KeyExchangeAlgorithm.DHE_RSA, KeyExchangeAlgorithm.ECDHE_RSA,
             KeyExchangeAlgorithm.SRP_RSA);
         addFilterLegacyServer(filters, ProvAlgorithmChecker.KU_KEY_ENCIPHERMENT, "RSA", KeyExchangeAlgorithm.RSA);
+
+        // adding filters for injected signers (e.g., PQC signers) #pqc-tls #injection
+        for (String name: InjectedSigners.getInjectedSignerNames())
+            addFilter(filters, name);
 
         return Collections.unmodifiableMap(filters);
     }
