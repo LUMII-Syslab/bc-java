@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.bc;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.pqc.InjectablePQC;
 
 /**
  * Object Identifiers belonging to iso.org.dod.internet.private.enterprise.legion-of-the-bouncy-castle (1.3.6.1.4.1.22554)
